@@ -12,18 +12,19 @@ static char input[2048];
 
 long eval_op(long x, char* op, long y)
 {
-    if (strcmp(op, "+") == 0) { return x + y; }
-    if (strcmp(op, "-") == 0) { return x - y; }
+    if (strcmp(op, "+") == 0) { return x + y; } // strcmp returns 0 if they are both true
+    if (strcmp(op, "-") == 0) { return x - y; } // unlike traditional boolean conditions
     if (strcmp(op, "*") == 0) { return x * y; }
     if (strcmp(op, "/") == 0) { return x / y; }
+    if (strcmp(op, "%") == 0) { return x % y; }
     return 0;
 }
 
 long eval(mpc_ast_t* t)
 {
-    if (strstr(t->tag,"number"))
+    if (strstr(t->tag,"number")) // not 100% but assumes returns true when char* substring found in first char* 
     {
-        return atoi(t->contents);
+        return atoi(t->contents); // atoi(char*) converts string to integer where possible
     }
 
     // operator is always the second child after '>'
@@ -41,6 +42,21 @@ long eval(mpc_ast_t* t)
     }
 
     return x;
+}
+
+int number_of_nodes(mpc_ast_t* t) // for a tree, every parent must have at least 2 or more child nodes
+{
+    if ((t->children_num) == 0) {   return 1;   }
+    if ((t->children_num) >= 1)
+    {
+        int total = 1;
+        for (int i = 0; i < t->children_num; i++)
+        {
+            total = total + number_of_nodes(t->children[i]);
+        }
+        return total;
+    }
+    return 0;
 }
 
 int main(int argc, char** argv)
@@ -85,7 +101,7 @@ int main(int argc, char** argv)
         }
 
 
-        printf("\nLoading AST from output\n");
+        /* printf("\nLoading AST from output\n");
         mpc_ast_t* a = r.output;
         printf("Tag: %s\n", a->tag); //field access of pointer types always uses ->
         printf("Contents %s\n", a->contents);
@@ -98,22 +114,32 @@ int main(int argc, char** argv)
         printf("Contents %s\n", c1->contents);
         printf("No. of children: %d\n", c1->children_num);
 
-        printf("\nGetting second child\n");
+        */
 
-        mpc_ast_t* c2 = a->children[2];
-        printf("Tag: %s\n", c2->tag); //field access of pointer types always uses ->, tag is 
-        printf("Contents %s\n", c2->contents);
-        printf("No. of children: %d\n", c2->children_num);
+        /*
 
-        printf("\nGetting third child\n");
+        Because initial output will look like this.
 
-        mpc_ast_t* c3 = a->children[3];
-        printf("Tag: %s\n", c3->tag); //field access of pointer types always uses ->, tag is 
-        printf("Contents %s\n", c3->contents);
-        printf("No. of children: %d\n", c3->children_num);
+        lispy> + 1 1
+        > 
+        regex 
+        operator|char:1:1 '+'
+        expr|number|regex:1:3 '1'
+        expr|number|regex:1:5 '1'
+        regex 
+        */
 
-        // printf("You have entered the string: %s\n", input);
+        mpc_ast_t* result = r.output;
 
+        
+        for (int i = 0; i < result->children_num; i++)
+        {
+            printf("%ith item %s \n", i, result->children[i]->contents);
+        }
+
+        printf("The result of this output is %li \n" , eval(result));
+        printf("Number of nodes in this tree: %d", number_of_nodes(result));
+        mpc_ast_delete(result);
     }
     
     mpc_cleanup(4, Number, Operator, Expr, Lispy); /* Undefines and deletes parsers, takes n (4) parameters and delete them */    
